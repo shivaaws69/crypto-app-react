@@ -40,8 +40,8 @@ jobs:
       - name: Tag Docker image for ECR
         run: |
           docker tag crypto-app-react:${{ steps.vars.outputs.SHORT_SHA }} \
-          235500187804.dkr.ecr.ap-south-1.amazonaws.com/crypto-app-react:${{ steps.vars.outputs.SHORT_SHA }}
+          235500187804.dkr.ecr.ap-south-1.amazonaws.com/react:${{ steps.vars.outputs.SHORT_SHA }}
 
       - name: Push Docker image to Amazon ECR
         run: |
-          docker push 235500187804.dkr.ecr.ap-south-1.amazonaws.com/crypto-app-react:${{ steps.vars.outputs.SHORT_SHA }}
+          docker push 235500187804.dkr.ecr.ap-south-1.amazonaws.com/react:${{ steps.vars.outputs.SHORT_SHA }}
