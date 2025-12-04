@@ -1,9 +1,9 @@
-name: ECR Build, Push, and Deploy
+name: ECR Build, Push
 
 on:
   push:
     branches:
-      - main
+      - feature/*
 
 jobs:
   build:
