@@ -4,7 +4,8 @@ on:
   push:
     branches:
       - feature/*
-      - main        # include main if you want builds on main too
+      - main 
+      - test # include main if you want builds on main too
       # add other branch patterns if needed
 
 jobs:
