@@ -1,12 +1,11 @@
-name: ECR Build, Push, and Deploy
+name: ECR Build and Push (Commit + Latest)
 
 on:
   push:
     branches:
+      - main
       - feature/*
-      - main 
-      - test # include main if you want builds on main too
-      # add other branch patterns if needed
+      - test
 
 jobs:
   build-and-push:
@@ -19,29 +18,94 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Determine short commit SHA
+      - name: Load environment variables
+        run: |
+          cat .github/ecr.env >> $GITHUB_ENV
+
+      - name: Get short commit SHA
         id: vars
         run: |
           echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      - name: Configure AWS Credentials via OIDC
+      - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::235500187804:role/github-oidc-access
-          aws-region: ap-south-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
+      - name: Build Docker image with tags
         run: |
-          docker build -t crypto-app-react:${{ steps.vars.outputs.SHORT_SHA }} .
+          docker build \
+            -t ${{ env.ECR_REPOSITORY }}:${{ steps.vars.outputs.SHORT_SHA }} \
+            -t ${{ env.ECR_REPOSITORY }}:latest .
 
-      - name: Tag Docker image for ECR
+      - name: Tag images for ECR
         run: |
-          docker tag crypto-app-react:${{ steps.vars.outputs.SHORT_SHA }} \
-          235500187804.dkr.ecr.ap-south-1.amazonaws.com/react:${{ steps.vars.outputs.SHORT_SHA }}
+          docker tag ${{ env.ECR_REPOSITORY }}:${{ steps.vars.outputs.SHORT_SHA }} \
+          ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ steps.vars.outputs.SHORT_SHA }}
 
-      - name: Push Docker image to Amazon ECR
+          docker tag ${{ env.ECR_REPOSITORY }}:latest \
+          ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Push images to Amazon ECR
         run: |
-          docker push 235500187804.dkr.ecr.ap-south-1.amazonaws.com/react:${{ steps.vars.outputs.SHORT_SHA }}
+          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ steps.vars.outputs.SHORT_SHA }}
+          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+
+
+
+
+
+
+
+
+# name: ECR Build, Push, and Deploy
+
+# on:
+#   push:
+#     branches:
+#       - feature/*
+#       - main 
+#       - test # include main if you want builds on main too
+#       # add other branch patterns if needed
+
+# jobs:
+#   build-and-push:
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: read
+#       id-token: write
+
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
+
+#       - name: Determine short commit SHA
+#         id: vars
+#         run: |
+#           echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+#       - name: Configure AWS Credentials via OIDC
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           role-to-assume: arn:aws:iam::235500187804:role/github-oidc-access
+#           aws-region: ap-south-1
+
+#       - name: Login to Amazon ECR
+#         uses: aws-actions/amazon-ecr-login@v2
+
+#       - name: Build Docker image
+#         run: |
+#           docker build -t crypto-app-react:${{ steps.vars.outputs.SHORT_SHA }} .
+
+#       - name: Tag Docker image for ECR
+#         run: |
+#           docker tag crypto-app-react:${{ steps.vars.outputs.SHORT_SHA }} \
+#           235500187804.dkr.ecr.ap-south-1.amazonaws.com/react:${{ steps.vars.outputs.SHORT_SHA }}
+
+#       - name: Push Docker image to Amazon ECR
+#         run: |
+#           docker push 235500187804.dkr.ecr.ap-south-1.amazonaws.com/react:${{ steps.vars.outputs.SHORT_SHA }}
